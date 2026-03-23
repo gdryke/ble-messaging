@@ -10,6 +10,8 @@ name = "drop_ffi"
 [dependencies]
 drop-core = { workspace = true }
 uniffi = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
