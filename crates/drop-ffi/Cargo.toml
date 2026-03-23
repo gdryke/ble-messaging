@@ -1,0 +1,15 @@
+[package]
+name = "drop-ffi"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["lib", "cdylib", "staticlib"]
+name = "drop_ffi"
+
+[dependencies]
+drop-core = { workspace = true }
+uniffi = { workspace = true }
+
+[build-dependencies]
+uniffi = { workspace = true, features = ["build"] }
