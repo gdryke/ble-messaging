@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 use drop_core::bloom::BloomFilter;
-use drop_core::crypto::encryption::{self, derive_message_key};
+use drop_core::crypto::encryption::derive_message_key;
 use drop_core::crypto::identity::{DeviceId, Identity, Peer};
 use drop_core::protocol::chunk::{Chunk, ChunkAck};
 use drop_core::protocol::handshake::Handshake;
@@ -80,12 +80,14 @@ pub struct FfiChunkResult {
 
 // ── Core object ─────────────────────────────────────────────────────────
 
+/// Tracks chunks received for a message: (total_chunks, received_chunks)
+type ReassemblyState = HashMap<Uuid, (u16, Vec<Option<Vec<u8>>>)>;
+
 #[derive(uniffi::Object)]
 pub struct DropCore {
     identity: Identity,
     store: Mutex<MessageStore>,
-    /// In-progress chunk reassembly: msg_id → (total_chunks, received chunks)
-    reassembly: Mutex<HashMap<Uuid, (u16, Vec<Option<Vec<u8>>>)>>,
+    reassembly: Mutex<ReassemblyState>,
 }
 
 #[uniffi::export]
