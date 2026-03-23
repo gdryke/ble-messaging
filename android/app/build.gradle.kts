@@ -57,8 +57,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
 
-    debugImplementation(libs.androidx.ui.tooling)
+    // UniFFI runtime dependency (JNA for native library loading)
+    implementation("net.java.dev.jna:jna:5.14.0@aar")
 
-    // TODO: Wire UniFFI bindings — add drop-core AAR dependency here
-    // implementation(files("libs/drop_core.aar"))
+    debugImplementation(libs.androidx.ui.tooling)
 }
