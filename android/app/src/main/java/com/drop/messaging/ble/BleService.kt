@@ -30,7 +30,7 @@ class BleService : Service() {
         super.onCreate()
         Log.i(TAG, "BleService created")
 
-        val repository = DropRepository()
+        val repository = DropRepository(this)
         bleManager = BleManager(this, repository)
     }
 

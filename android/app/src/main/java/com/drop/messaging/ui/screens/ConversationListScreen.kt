@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import com.drop.messaging.data.DropRepository
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,7 +46,8 @@ fun ConversationListScreen(
     onConversationClick: (peerId: String, peerName: String) -> Unit
 ) {
     // TODO: Wire UniFFI bindings — inject repository via ViewModel/DI
-    val repository = remember { DropRepository() }
+    val context = LocalContext.current
+    val repository = remember(context) { DropRepository(context) }
     val conversations by repository.conversations.collectAsState(initial = emptyList())
 
     Scaffold(

@@ -58,7 +58,7 @@ jobs:
           cargo run --package uniffi-bindgen -- generate \
             --library target/aarch64-linux-android/release/libdrop_ffi.so \
             --language kotlin \
-            --out-dir android/app/src/main/java/uniffi/drop_ffi \
+            --out-dir android/app/src/main/java \
             --no-format
 
       - name: Setup Gradle
