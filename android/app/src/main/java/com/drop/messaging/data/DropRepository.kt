@@ -57,7 +57,7 @@ class DropRepository(context: Context) {
                     val appCtx = context.applicationContext
                     val dbPath = appCtx.filesDir.resolve("drop.db").absolutePath
                     val secretKey = loadSecretKey(appCtx)
-                    val core = DropCore.new(dbPath, secretKey)
+                    val core = DropCore(dbPath, secretKey)
                     // If no key was stored, the core generated a new identity — persist it
                     if (secretKey == null) {
                         saveSecretKey(appCtx, core.getIdentity().secretKey)

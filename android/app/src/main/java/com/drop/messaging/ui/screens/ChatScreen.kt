@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import com.drop.messaging.data.DropRepository
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -54,7 +55,8 @@ fun ChatScreen(
     onBack: () -> Unit
 ) {
     // TODO: Wire UniFFI bindings — inject repository via ViewModel/DI
-    val repository = remember { DropRepository() }
+    val context = LocalContext.current
+    val repository = remember(context) { DropRepository(context) }
     val messages by repository.getMessages(peerId).collectAsState(initial = emptyList())
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
