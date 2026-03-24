@@ -5,6 +5,24 @@ import Foundation
 
 let ui = TerminalUI()
 
+// -- Ctrl+C handling: first press clears prompt, second exits --
+var ctrlCPending = false
+signal(SIGINT) { _ in
+    if ctrlCPending {
+        // Second Ctrl+C — clean exit
+        ui.cleanup()
+        print("Bye!")
+        exit(0)
+    }
+    ctrlCPending = true
+    ui.clearPrompt()
+    ui.systemLog("Press Ctrl+C again to exit")
+    // Reset after 2 seconds
+    DispatchQueue.global().asyncAfter(deadline: .now() + 2.0) {
+        ctrlCPending = false
+    }
+}
+
 let dbDir = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent(".drop")
 try? FileManager.default.createDirectory(at: dbDir, withIntermediateDirectories: true)
@@ -18,17 +36,7 @@ do {
     exit(1)
 }
 
-ui.info("")
-ui.info("Commands:")
-ui.info("  peers                       — List known peers")
-ui.info("  add <hex-pubkey> <name>     — Add a peer by public key")
-ui.info("  send <device-id-hex> <msg>  — Queue a message for a peer")
-ui.info("  identity                    — Show your identity (for sharing)")
-ui.info("  bloom                       — Show current bloom filter")
-ui.info("  status                      — Show BLE connection state")
-ui.info("  log                         — Toggle verbose BLE logging")
-ui.info("  quit                        — Exit")
-ui.info("")
+ui.info("Commands: peers, add, send, identity, bloom, status, log, quit")
 ui.redrawPrompt()
 
 // Run the command loop on a background thread so RunLoop stays alive for BLE
@@ -39,6 +47,7 @@ DispatchQueue.global().async {
             ui.redrawPrompt()
             continue
         }
+        ctrlCPending = false  // reset on any input
 
         let parts = line.split(separator: " ", maxSplits: 2).map(String.init)
         let command = parts[0].lowercased()
@@ -93,10 +102,7 @@ DispatchQueue.global().async {
             ui.commandOutput("Verbose BLE logging: \(ui.verboseLogging ? "ON" : "OFF")")
 
         case "quit", "exit", "q":
-            // Reset terminal before exiting
-            print("\u{1B}[1;\(999)r", terminator: "") // restore full scroll region
-            print("\u{1B}[2J", terminator: "")         // clear screen
-            print("\u{1B}[1;1H", terminator: "")       // cursor home
+            ui.cleanup()
             print("Bye!")
             exit(0)
 
