@@ -45,6 +45,10 @@ class BleManager(
         val SERVICE_PARCEL_UUID: ParcelUuid = ParcelUuid(SERVICE_UUID)
 
         val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+
+        // Shared state for UI access — updated by the BleService's BleManager instance
+        private val _nearbyPeers = MutableStateFlow<Set<String>>(emptySet())
+        val nearbyPeers: StateFlow<Set<String>> = _nearbyPeers.asStateFlow()
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -142,10 +146,12 @@ class BleManager(
                 BluetoothProfile.STATE_CONNECTED -> {
                     Log.i(TAG, "Peer connected to GATT server: $address")
                     _connectedPeers.value = _connectedPeers.value + address
+                    _nearbyPeers.value = _nearbyPeers.value + address
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(TAG, "Peer disconnected from GATT server: $address")
                     _connectedPeers.value = _connectedPeers.value - address
+                    _nearbyPeers.value = _nearbyPeers.value - address
                 }
             }
         }
@@ -259,12 +265,14 @@ class BleManager(
                     Log.i(TAG, "Connected to GATT server at $address, discovering services...")
                     activeConnections[address] = gatt
                     _connectedPeers.value = _connectedPeers.value + address
+                    _nearbyPeers.value = _nearbyPeers.value + address
                     gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(TAG, "Disconnected from $address")
                     activeConnections.remove(address)
                     _connectedPeers.value = _connectedPeers.value - address
+                    _nearbyPeers.value = _nearbyPeers.value - address
                     gatt.close()
                 }
             }

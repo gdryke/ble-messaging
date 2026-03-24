@@ -8,10 +8,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.drop.messaging.ui.screens.ChatScreen
 import com.drop.messaging.ui.screens.ConversationListScreen
+import com.drop.messaging.ui.screens.NearbyScreen
+import com.drop.messaging.ui.screens.ProfileScreen
 
 object Routes {
     const val CONVERSATIONS = "conversations"
     const val CHAT = "chat/{peerId}/{peerName}"
+    const val PROFILE = "profile"
+    const val NEARBY = "nearby"
 
     fun chat(peerId: String, peerName: String): String =
         "chat/$peerId/$peerName"
@@ -29,6 +33,12 @@ fun DropNavGraph() {
             ConversationListScreen(
                 onConversationClick = { peerId, peerName ->
                     navController.navigate(Routes.chat(peerId, peerName))
+                },
+                onProfileClick = {
+                    navController.navigate(Routes.PROFILE)
+                },
+                onNearbyClick = {
+                    navController.navigate(Routes.NEARBY)
                 }
             )
         }
@@ -45,6 +55,18 @@ fun DropNavGraph() {
             ChatScreen(
                 peerId = peerId,
                 peerName = peerName,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.PROFILE) {
+            ProfileScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.NEARBY) {
+            NearbyScreen(
                 onBack = { navController.popBackStack() }
             )
         }

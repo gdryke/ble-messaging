@@ -10,6 +10,8 @@ import uniffi.drop_ffi.DropCore
 import uniffi.drop_ffi.DropException
 import uniffi.drop_ffi.FfiChunkResult
 import uniffi.drop_ffi.FfiHandshakeInfo
+import uniffi.drop_ffi.FfiIdentity
+import uniffi.drop_ffi.FfiPeer
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -128,11 +130,49 @@ class DropRepository(context: Context) {
     fun getIdentity(): ByteArray = myDeviceId
 
     /**
+     * Returns the full FfiIdentity including publicKey and secretKey.
+     */
+    fun getFullIdentity(): FfiIdentity = core.getIdentity()
+
+    /**
      * Returns a human-readable display name derived from the device ID suffix.
      */
     fun getDisplayName(): String {
         // TODO: Allow the user to set a custom display name (persist in SharedPreferences)
         return "Drop-${myDeviceId.toHexString().takeLast(4)}"
+    }
+
+    // endregion
+
+    // region Peers
+
+    /**
+     * Adds a peer by public key and display name, creating a conversation.
+     * Returns the hex device ID of the new peer.
+     */
+    fun addPeer(publicKey: ByteArray, displayName: String): String {
+        return try {
+            val peer: FfiPeer = core.addPeer(publicKey, displayName)
+            val hexId = peer.deviceId.toHexString()
+            Log.i(TAG, "addPeer: added $displayName ($hexId)")
+            refreshConversations()
+            hexId
+        } catch (e: DropException) {
+            Log.e(TAG, "addPeer failed", e)
+            ""
+        }
+    }
+
+    /**
+     * Returns the list of known peers from the core.
+     */
+    fun getPeers(): List<FfiPeer> {
+        return try {
+            core.getPeers()
+        } catch (e: DropException) {
+            Log.e(TAG, "getPeers failed", e)
+            emptyList()
+        }
     }
 
     // endregion
@@ -341,9 +381,9 @@ class DropRepository(context: Context) {
 
     /**
      * Refreshes the conversations list from the DropCore peer list
-     * and in-memory messages.
+     * and in-memory messages. Can be called externally after adding peers.
      */
-    private fun refreshConversations() {
+    fun refreshConversations() {
         try {
             val peers = core.getPeers()
             _conversations.value = peers.map { peer ->
