@@ -44,23 +44,29 @@ class BleAdvertiser(
         }
 
         val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
             .setConnectable(true)
             .setTimeout(0) // Advertise indefinitely
             .build()
 
-        val serviceData = buildServiceData()
-
-        val data = AdvertiseData.Builder()
+        // Main advertisement: service UUID only (fits in 31-byte limit)
+        val advertiseData = AdvertiseData.Builder()
             .addServiceUuid(BleManager.SERVICE_PARCEL_UUID)
+            .setIncludeDeviceName(false)
+            .setIncludeTxPowerLevel(false)
+            .build()
+
+        // Scan response: Bloom filter service data (sent when central does active scan)
+        val serviceData = buildServiceData()
+        val scanResponse = AdvertiseData.Builder()
             .addServiceData(BleManager.SERVICE_PARCEL_UUID, serviceData)
             .setIncludeDeviceName(false)
             .setIncludeTxPowerLevel(false)
             .build()
 
         Log.i(TAG, "Starting BLE advertising for Drop service")
-        leAdvertiser.startAdvertising(settings, data, advertiseCallback)
+        leAdvertiser.startAdvertising(settings, advertiseData, scanResponse, advertiseCallback)
     }
 
     fun stopAdvertising() {

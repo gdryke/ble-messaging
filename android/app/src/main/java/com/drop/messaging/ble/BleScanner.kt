@@ -38,7 +38,7 @@ class BleScanner(
     )
 
     private val scanSettings = ScanSettings.Builder()
-        .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+        .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
         .setReportDelay(0)
         .build()
 
