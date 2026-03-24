@@ -294,14 +294,13 @@ class DropRepository(context: Context) {
      */
     fun handleHandshake(peerId: String, data: ByteArray) {
         try {
-            val info: FfiHandshakeInfo = core.parseHandshake(data)
-            val deviceHex = info.deviceId.toHexString()
-            bleAddressToDeviceId[peerId] = info.deviceId
-            Log.i(TAG, "handleHandshake: $peerId → $deviceHex " +
-                    "(v${info.version}, ${info.pendingMsgIds.size} pending)")
-
-            // TODO: Register the peer via core.addPeer() once public keys
-            // are exchanged as part of the handshake protocol.
+            // Auto-register the peer from their handshake (includes public key)
+            val peer = core.handleHandshake(data)
+            val deviceHex = peer.deviceId.toHexString()
+            bleAddressToDeviceId[peerId] = peer.deviceId
+            Log.i(TAG, "handleHandshake: auto-registered $peerId → " +
+                    "${peer.displayName} ($deviceHex)")
+            refreshConversations()
         } catch (e: DropException) {
             Log.e(TAG, "handleHandshake failed for $peerId", e)
         }

@@ -748,6 +748,8 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
 // For large crates we prevent `MethodTooLargeException` (see #2340)
 // N.B. the name of the extension is very misleading, since it is 
 // rather `InterfaceTooLargeException`, caused by too many methods 
@@ -784,6 +786,8 @@ fun uniffi_drop_ffi_checksum_method_dropcore_get_peers(
 fun uniffi_drop_ffi_checksum_method_dropcore_get_pending_for_peer(
 ): Short
 fun uniffi_drop_ffi_checksum_method_dropcore_get_pending_recipients(
+): Short
+fun uniffi_drop_ffi_checksum_method_dropcore_handle_handshake(
 ): Short
 fun uniffi_drop_ffi_checksum_method_dropcore_mark_delivered(
 ): Short
@@ -873,6 +877,8 @@ fun uniffi_drop_ffi_fn_method_dropcore_get_peers(`ptr`: Pointer,uniffi_out_err: 
 fun uniffi_drop_ffi_fn_method_dropcore_get_pending_for_peer(`ptr`: Pointer,`deviceId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 fun uniffi_drop_ffi_fn_method_dropcore_get_pending_recipients(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+fun uniffi_drop_ffi_fn_method_dropcore_handle_handshake(`ptr`: Pointer,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 fun uniffi_drop_ffi_fn_method_dropcore_mark_delivered(`ptr`: Pointer,`msgId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -1041,6 +1047,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_drop_ffi_checksum_method_dropcore_get_pending_recipients() != 7962.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_drop_ffi_checksum_method_dropcore_handle_handshake() != 9560.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_drop_ffi_checksum_method_dropcore_mark_delivered() != 52255.toShort()) {
@@ -1539,6 +1548,11 @@ public interface DropCoreInterface {
      */
     fun `getPendingRecipients`(): List<kotlin.ByteArray>
     
+    /**
+     * Parse a handshake and auto-register the peer. Returns the peer info.
+     */
+    fun `handleHandshake`(`data`: kotlin.ByteArray): FfiPeer
+    
     fun `markDelivered`(`msgId`: kotlin.String)
     
     /**
@@ -1821,6 +1835,22 @@ open class DropCore: Disposable, AutoCloseable, DropCoreInterface
     
 
     
+    /**
+     * Parse a handshake and auto-register the peer. Returns the peer info.
+     */
+    @Throws(DropException::class)override fun `handleHandshake`(`data`: kotlin.ByteArray): FfiPeer {
+            return FfiConverterTypeFfiPeer.lift(
+    callWithPointer {
+    uniffiRustCallWithError(DropException) { _status ->
+    UniffiLib.INSTANCE.uniffi_drop_ffi_fn_method_dropcore_handle_handshake(
+        it, FfiConverterByteArray.lower(`data`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(DropException::class)override fun `markDelivered`(`msgId`: kotlin.String)
         = 
     callWithPointer {
@@ -2024,6 +2054,7 @@ public object FfiConverterTypeFfiDecryptedMessage: FfiConverterRustBuffer<FfiDec
 
 data class FfiHandshakeInfo (
     var `deviceId`: kotlin.ByteArray, 
+    var `publicKey`: kotlin.ByteArray, 
     var `version`: kotlin.UByte, 
     var `pendingMsgIds`: List<kotlin.String>
 ) {
@@ -2038,6 +2069,7 @@ public object FfiConverterTypeFfiHandshakeInfo: FfiConverterRustBuffer<FfiHandsh
     override fun read(buf: ByteBuffer): FfiHandshakeInfo {
         return FfiHandshakeInfo(
             FfiConverterByteArray.read(buf),
+            FfiConverterByteArray.read(buf),
             FfiConverterUByte.read(buf),
             FfiConverterSequenceString.read(buf),
         )
@@ -2045,12 +2077,14 @@ public object FfiConverterTypeFfiHandshakeInfo: FfiConverterRustBuffer<FfiHandsh
 
     override fun allocationSize(value: FfiHandshakeInfo) = (
             FfiConverterByteArray.allocationSize(value.`deviceId`) +
+            FfiConverterByteArray.allocationSize(value.`publicKey`) +
             FfiConverterUByte.allocationSize(value.`version`) +
             FfiConverterSequenceString.allocationSize(value.`pendingMsgIds`)
     )
 
     override fun write(value: FfiHandshakeInfo, buf: ByteBuffer) {
             FfiConverterByteArray.write(value.`deviceId`, buf)
+            FfiConverterByteArray.write(value.`publicKey`, buf)
             FfiConverterUByte.write(value.`version`, buf)
             FfiConverterSequenceString.write(value.`pendingMsgIds`, buf)
     }

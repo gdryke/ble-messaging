@@ -321,6 +321,11 @@ RustBuffer uniffi_drop_ffi_fn_method_dropcore_get_pending_for_peer(void*_Nonnull
 RustBuffer uniffi_drop_ffi_fn_method_dropcore_get_pending_recipients(void*_Nonnull ptr, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_DROP_FFI_FN_METHOD_DROPCORE_HANDLE_HANDSHAKE
+#define UNIFFI_FFIDEF_UNIFFI_DROP_FFI_FN_METHOD_DROPCORE_HANDLE_HANDSHAKE
+RustBuffer uniffi_drop_ffi_fn_method_dropcore_handle_handshake(void*_Nonnull ptr, RustBuffer data, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_DROP_FFI_FN_METHOD_DROPCORE_MARK_DELIVERED
 #define UNIFFI_FFIDEF_UNIFFI_DROP_FFI_FN_METHOD_DROPCORE_MARK_DELIVERED
 void uniffi_drop_ffi_fn_method_dropcore_mark_delivered(void*_Nonnull ptr, RustBuffer msg_id, RustCallStatus *_Nonnull out_status
@@ -689,6 +694,12 @@ uint16_t uniffi_drop_ffi_checksum_method_dropcore_get_pending_for_peer(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_DROP_FFI_CHECKSUM_METHOD_DROPCORE_GET_PENDING_RECIPIENTS
 #define UNIFFI_FFIDEF_UNIFFI_DROP_FFI_CHECKSUM_METHOD_DROPCORE_GET_PENDING_RECIPIENTS
 uint16_t uniffi_drop_ffi_checksum_method_dropcore_get_pending_recipients(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_DROP_FFI_CHECKSUM_METHOD_DROPCORE_HANDLE_HANDSHAKE
+#define UNIFFI_FFIDEF_UNIFFI_DROP_FFI_CHECKSUM_METHOD_DROPCORE_HANDLE_HANDSHAKE
+uint16_t uniffi_drop_ffi_checksum_method_dropcore_handle_handshake(void
     
 );
 #endif

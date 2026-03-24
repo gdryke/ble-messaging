@@ -65,6 +65,7 @@ pub struct FfiDecryptedMessage {
 #[derive(uniffi::Record)]
 pub struct FfiHandshakeInfo {
     pub device_id: Vec<u8>,
+    pub public_key: Vec<u8>,
     pub version: u8,
     pub pending_msg_ids: Vec<String>,
 }
@@ -346,7 +347,11 @@ impl DropCore {
             .map_err(|e| DropError::Database { msg: e.to_string() })?;
 
         let msg_ids: Vec<Uuid> = pending.iter().map(|m| m.msg_id).collect();
-        let hs = Handshake::new(*self.identity.device_id(), msg_ids);
+        let hs = Handshake::new(
+            *self.identity.device_id(),
+            self.identity.public_key_bytes(),
+            msg_ids,
+        );
         Ok(hs.to_bytes())
     }
 
@@ -357,8 +362,36 @@ impl DropCore {
 
         Ok(FfiHandshakeInfo {
             device_id: hs.device_id.as_bytes().to_vec(),
+            public_key: hs.public_key.to_vec(),
             version: hs.version,
             pending_msg_ids: hs.pending_msg_ids.iter().map(|id| id.to_string()).collect(),
+        })
+    }
+
+    /// Parse a handshake and auto-register the peer. Returns the peer info.
+    pub fn handle_handshake(&self, data: Vec<u8>) -> Result<FfiPeer, DropError> {
+        let hs = Handshake::from_bytes(&data)
+            .ok_or_else(|| DropError::InvalidData { msg: "malformed handshake".into() })?;
+
+        let id_hex: String = hs.device_id.as_bytes()[..4]
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect();
+        let peer = Peer::new(
+            hs.public_key,
+            format!("Drop-{}", id_hex),
+        );
+
+        let store = self.store.lock().unwrap();
+        store
+            .upsert_peer(&peer)
+            .map_err(|e| DropError::Database { msg: e.to_string() })?;
+
+        Ok(FfiPeer {
+            device_id: peer.device_id.as_bytes().to_vec(),
+            public_key: peer.public_key.to_vec(),
+            display_name: peer.display_name,
+            last_seen: peer.last_seen,
         })
     }
 

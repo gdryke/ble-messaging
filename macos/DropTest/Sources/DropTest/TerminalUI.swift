@@ -141,21 +141,21 @@ final class TerminalUI: @unchecked Sendable {
     }
 
     private func printInSystemRegion(_ line: String) {
-        // Ensure scroll region is the system area
+        // Save cursor position, write in system region, restore cursor
+        write("\(esc)s")  // save cursor
         setScrollRegion(systemTop, systemBottom)
-        // Move cursor to last line of system region and print — terminal scrolls up automatically
         write("\(esc)\(systemBottom);1H\n\(esc)2K\(line)")
-        // Restore prompt so it stays put
-        restorePromptCursor()
+        write("\(esc)u")  // restore cursor
+        fflush(stdout)
     }
 
     private func drawStatusBar(_ text: String) {
-        // Disable scroll region temporarily
+        write("\(esc)s")  // save cursor
         setScrollRegion(1, rows)
         let padded = String((text + String(repeating: " ", count: max(0, cols - text.count))).prefix(cols))
         write("\(esc)\(statusRow);1H\(esc)2K\(bold)\(magenta)── \(padded)\(reset)")
-        // Re-enable scroll region
         setScrollRegion(systemTop, systemBottom)
+        write("\(esc)u")  // restore cursor
     }
 
     private func restorePromptCursor() {

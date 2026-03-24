@@ -231,15 +231,19 @@ final class DropManager: @unchecked Sendable {
 
     private func handleIncomingHandshake(_ data: Data, asCentral: Bool) {
         do {
-            let info = try core.parseHandshake(data: data)
-            let peerDeviceId = info.deviceId
-            ui.systemLog("🤝 Handshake from \(peerDeviceId.hex.prefix(12))… (v\(info.version))")
+            // Auto-register the peer from their handshake (includes public key)
+            let peer = try core.handleHandshake(data: data)
+            let peerDeviceId = peer.deviceId
 
+            ui.success("🤝 Peer registered: \(peer.displayName) (\(peerDeviceId.hex.prefix(12))…)")
+
+            // Also parse for pending msg info
+            let info = try core.parseHandshake(data: data)
             if info.pendingMsgIds.count > 0 {
                 ui.systemLog("  Pending messages for us: \(info.pendingMsgIds.count)")
             }
 
-            ui.statusBar("Drop — connected to \(peerDeviceId.hex.prefix(12))…")
+            ui.statusBar("Drop — connected to \(peer.displayName)")
 
             if asCentral {
                 let ourHandshake = try core.buildHandshake(peerDeviceId: peerDeviceId)
@@ -247,7 +251,7 @@ final class DropManager: @unchecked Sendable {
                 sendPendingMessages(to: peerDeviceId)
             }
         } catch {
-            ui.error("Handshake parse error: \(error)")
+            ui.error("Handshake error: \(error)")
         }
     }
 

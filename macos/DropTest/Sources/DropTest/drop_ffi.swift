@@ -592,6 +592,11 @@ public protocol DropCoreProtocol: AnyObject, Sendable {
      */
     func getPendingRecipients() throws  -> [Data]
     
+    /**
+     * Parse a handshake and auto-register the peer. Returns the peer info.
+     */
+    func handleHandshake(data: Data) throws  -> FfiPeer
+    
     func markDelivered(msgId: String) throws 
     
     /**
@@ -785,6 +790,17 @@ open func getPendingForPeer(deviceId: Data)throws  -> [FfiMessage]  {
 open func getPendingRecipients()throws  -> [Data]  {
     return try  FfiConverterSequenceData.lift(try rustCallWithError(FfiConverterTypeDropError_lift) {
     uniffi_drop_ffi_fn_method_dropcore_get_pending_recipients(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Parse a handshake and auto-register the peer. Returns the peer info.
+     */
+open func handleHandshake(data: Data)throws  -> FfiPeer  {
+    return try  FfiConverterTypeFfiPeer_lift(try rustCallWithError(FfiConverterTypeDropError_lift) {
+    uniffi_drop_ffi_fn_method_dropcore_handle_handshake(self.uniffiClonePointer(),
+        FfiConverterData.lower(data),$0
     )
 })
 }
@@ -1088,13 +1104,15 @@ public func FfiConverterTypeFfiDecryptedMessage_lower(_ value: FfiDecryptedMessa
 
 public struct FfiHandshakeInfo {
     public var deviceId: Data
+    public var publicKey: Data
     public var version: UInt8
     public var pendingMsgIds: [String]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(deviceId: Data, version: UInt8, pendingMsgIds: [String]) {
+    public init(deviceId: Data, publicKey: Data, version: UInt8, pendingMsgIds: [String]) {
         self.deviceId = deviceId
+        self.publicKey = publicKey
         self.version = version
         self.pendingMsgIds = pendingMsgIds
     }
@@ -1110,6 +1128,9 @@ extension FfiHandshakeInfo: Equatable, Hashable {
         if lhs.deviceId != rhs.deviceId {
             return false
         }
+        if lhs.publicKey != rhs.publicKey {
+            return false
+        }
         if lhs.version != rhs.version {
             return false
         }
@@ -1121,6 +1142,7 @@ extension FfiHandshakeInfo: Equatable, Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(deviceId)
+        hasher.combine(publicKey)
         hasher.combine(version)
         hasher.combine(pendingMsgIds)
     }
@@ -1136,6 +1158,7 @@ public struct FfiConverterTypeFfiHandshakeInfo: FfiConverterRustBuffer {
         return
             try FfiHandshakeInfo(
                 deviceId: FfiConverterData.read(from: &buf), 
+                publicKey: FfiConverterData.read(from: &buf), 
                 version: FfiConverterUInt8.read(from: &buf), 
                 pendingMsgIds: FfiConverterSequenceString.read(from: &buf)
         )
@@ -1143,6 +1166,7 @@ public struct FfiConverterTypeFfiHandshakeInfo: FfiConverterRustBuffer {
 
     public static func write(_ value: FfiHandshakeInfo, into buf: inout [UInt8]) {
         FfiConverterData.write(value.deviceId, into: &buf)
+        FfiConverterData.write(value.publicKey, into: &buf)
         FfiConverterUInt8.write(value.version, into: &buf)
         FfiConverterSequenceString.write(value.pendingMsgIds, into: &buf)
     }
@@ -1721,6 +1745,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_drop_ffi_checksum_method_dropcore_get_pending_recipients() != 7962) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_drop_ffi_checksum_method_dropcore_handle_handshake() != 9560) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_drop_ffi_checksum_method_dropcore_mark_delivered() != 52255) {
