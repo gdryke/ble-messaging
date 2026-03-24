@@ -6,13 +6,26 @@ final class DropManager: @unchecked Sendable {
     let core: DropCore
     let central: BleCentral
     let peripheral: BlePeripheral
+    let ui: TerminalUI
 
     /// Maps CBPeripheral UUID → device_id bytes (learned during handshake)
     private var peerMap: [UUID: Data] = [:]
     /// Tracks whether we've initiated a handshake with a connected peer
     private var handshakeComplete: [UUID: Bool] = [:]
 
-    init(dbPath: String) throws {
+    // -- Deduplication state --
+    /// Peripheral UUIDs we've already discovered (avoid repeat "Discovered" logs)
+    private var knownPeripherals: Set<UUID> = []
+    /// Peripheral UUIDs for which we already logged a bloom filter check
+    private var bloomCheckedPeers: Set<UUID> = []
+    /// Peers we've exchanged messages with (device-id hex → true)
+    private var exchangedPeers: Set<String> = []
+    /// Whether a reconnect timer is already pending
+    private var reconnectScheduled: Bool = false
+
+    init(dbPath: String, ui: TerminalUI) throws {
+        self.ui = ui
+
         // Try to load existing secret key
         let keyURL = URL(fileURLWithPath: dbPath).deletingLastPathComponent()
             .appendingPathComponent("identity.key")
@@ -35,16 +48,20 @@ final class DropManager: @unchecked Sendable {
         central = BleCentral()
         peripheral = BlePeripheral()
 
+        // Wire up UI references
+        central.ui = ui
+        peripheral.ui = ui
+
         setupCallbacks()
         refreshBloomFilter()
 
         let identity = core.getIdentity()
-        print("══════════════════════════════════════════")
-        print("  Drop Test — macOS BLE Messaging")
-        print("══════════════════════════════════════════")
-        print("  Device ID: \(identity.deviceId.hex)")
-        print("  Public Key: \(identity.publicKey.hex)")
-        print("══════════════════════════════════════════")
+        ui.info("══════════════════════════════════════════")
+        ui.info("  Drop Test — macOS BLE Messaging")
+        ui.info("══════════════════════════════════════════")
+        ui.info("  Device ID:  \(identity.deviceId.hex)")
+        ui.info("  Public Key: \(identity.publicKey.hex)")
+        ui.info("══════════════════════════════════════════")
     }
 
     func refreshBloomFilter() {
@@ -52,8 +69,19 @@ final class DropManager: @unchecked Sendable {
             let filter = try core.buildBloomFilter()
             peripheral.updateBloomFilter(filter)
         } catch {
-            print("[Drop] Failed to build bloom filter: \(error)")
+            ui.error("Failed to build bloom filter: \(error)")
         }
+    }
+
+    // MARK: - Status
+
+    func printStatus() {
+        ui.commandOutput("BLE Status:")
+        ui.commandOutput("  Scanning:    \(central.isScanning ? "yes" : "no")")
+        ui.commandOutput("  Advertising: \(peripheral.isAdvertising ? "yes" : "no")")
+        ui.commandOutput("  Known peers nearby: \(knownPeripherals.count)")
+        ui.commandOutput("  Handshakes done:    \(handshakeComplete.values.filter { $0 }.count)")
+        ui.commandOutput("  Verbose logging:    \(ui.verboseLogging ? "on" : "off")")
     }
 
     // MARK: - Peer Management
@@ -61,9 +89,9 @@ final class DropManager: @unchecked Sendable {
     func addPeer(publicKey: Data, name: String) {
         do {
             let peer = try core.addPeer(publicKey: publicKey, displayName: name)
-            print("[Drop] ✅ Added peer '\(name)' — device ID: \(peer.deviceId.hex)")
+            ui.success("✅ Added peer '\(name)' — device ID: \(peer.deviceId.hex)")
         } catch {
-            print("[Drop] Failed to add peer: \(error)")
+            ui.error("Failed to add peer: \(error)")
         }
     }
 
@@ -71,15 +99,15 @@ final class DropManager: @unchecked Sendable {
         do {
             let peers = try core.getPeers()
             if peers.isEmpty {
-                print("[Drop] No peers. Use 'add <hex-pubkey> <name>' to add one.")
+                ui.commandOutput("No peers. Use 'add <hex-pubkey> <name>' to add one.")
                 return
             }
-            print("[Drop] Known peers:")
+            ui.commandOutput("Known peers:")
             for p in peers {
-                print("  • \(p.displayName) — \(p.deviceId.hex)")
+                ui.commandOutput("  • \(p.displayName) — \(p.deviceId.hex)")
             }
         } catch {
-            print("[Drop] Error: \(error)")
+            ui.error("Error: \(error)")
         }
     }
 
@@ -90,9 +118,10 @@ final class DropManager: @unchecked Sendable {
                 text: text
             )
             refreshBloomFilter()
-            print("[Drop] ✉️  Message queued: \(msg.msgId) (\(msg.wireBytes.count) bytes)")
+            ui.chatMessage(from: "you", text: text, incoming: false)
+            ui.systemLog("Message queued: \(msg.msgId) (\(msg.wireBytes.count) bytes)")
         } catch {
-            print("[Drop] Send failed: \(error)")
+            ui.error("Send failed: \(error)")
         }
     }
 
@@ -103,28 +132,30 @@ final class DropManager: @unchecked Sendable {
         central.onBloomFilterDiscovered = { [weak self] peripheral, bloomData in
             guard let self else { return }
 
-            // Check if their bloom filter indicates messages for us
-            let shouldConnect = true
-            if let bloomData, bloomData.count >= 8 {
-                let hasMessages = self.core.checkBloomFilter(filterBytes: bloomData)
-                print("[Drop] Bloom filter check: \(hasMessages ? "match ✅" : "no match")")
-                // Connect anyway for handshake — we might have messages for them
+            let pId = peripheral.identifier
+            let isNew = self.knownPeripherals.insert(pId).inserted
+            if isNew {
+                let name = peripheral.name ?? pId.uuidString.prefix(8).description
+                self.ui.systemLog("Discovered peer: \(name)")
             }
 
-            if shouldConnect {
-                self.central.connect(to: peripheral)
+            // Check bloom filter (only log once per peer)
+            if let bloomData, bloomData.count >= 8 {
+                if self.bloomCheckedPeers.insert(pId).inserted {
+                    let hasMessages = self.core.checkBloomFilter(filterBytes: bloomData)
+                    self.ui.systemLog("Bloom check for \(pId.uuidString.prefix(8)): \(hasMessages ? "match ✅" : "no match")")
+                }
             }
+
+            self.central.connect(to: peripheral)
         }
 
         // --- Central: connected to peripheral, chars discovered ---
         central.onCharacteristicDiscovered = { [weak self] peripheral, char in
             guard let self else { return }
 
-            // Once we have all chars, initiate handshake
             if char.uuid == BleConstants.handshakeUUID {
-                // Read their handshake first
                 self.central.read(from: BleConstants.handshakeUUID)
-                // Subscribe to outbox notifications (for receiving their messages)
                 self.central.subscribe(to: BleConstants.outboxNotifyUUID)
                 self.central.subscribe(to: BleConstants.ackUUID)
             }
@@ -142,18 +173,32 @@ final class DropManager: @unchecked Sendable {
                 self.handleIncomingChunk(data)
 
             case BleConstants.ackUUID:
-                print("[Drop] Received ACK: \(data.hex)")
+                self.ui.systemLog("Received ACK: \(data.hex)")
 
             default:
                 break
             }
         }
 
-        central.onDisconnected = { [weak self] _ in
-            self?.peerMap.removeAll()
-            self?.handshakeComplete.removeAll()
-            print("[Drop] Peer disconnected — resuming scan")
-            self?.central.startScanning()
+        // --- Central: peer disconnected — delay before re-scanning ---
+        central.onDisconnected = { [weak self] peripheral in
+            guard let self else { return }
+            self.peerMap.removeAll()
+            self.handshakeComplete.removeAll()
+
+            let name = peripheral.name ?? peripheral.identifier.uuidString.prefix(8).description
+            self.ui.systemLog("Lost connection to \(name)")
+            self.ui.statusBar("Drop — disconnected")
+
+            // Avoid rapid reconnect loop: wait 3 seconds before resuming scan
+            guard !self.reconnectScheduled else { return }
+            self.reconnectScheduled = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                guard let self else { return }
+                self.reconnectScheduled = false
+                self.ui.systemLog("Resuming scan…")
+                self.central.startScanning()
+            }
         }
 
         // --- Peripheral: someone wrote to our GATT server ---
@@ -163,15 +208,13 @@ final class DropManager: @unchecked Sendable {
             switch request.characteristic.uuid {
             case BleConstants.handshakeUUID:
                 self.handleIncomingHandshake(data, asCentral: false)
-                // Respond with our handshake — we need to figure out who they are first
-                // For now, build a generic handshake
                 self.respondWithHandshake(to: request)
 
             case BleConstants.inboxWriteUUID:
                 self.handleIncomingChunk(data)
 
             case BleConstants.ackUUID:
-                print("[Drop] Received ACK via write: \(data.hex)")
+                self.ui.systemLog("Received ACK via write: \(data.hex)")
 
             default:
                 break
@@ -190,19 +233,21 @@ final class DropManager: @unchecked Sendable {
         do {
             let info = try core.parseHandshake(data: data)
             let peerDeviceId = info.deviceId
-            print("[Drop] 🤝 Handshake from peer: \(peerDeviceId.hex) (v\(info.version))")
-            print("[Drop]    Pending messages for us: \(info.pendingMsgIds.count)")
+            ui.systemLog("🤝 Handshake from \(peerDeviceId.hex.prefix(12))… (v\(info.version))")
 
-            // If we're the central, write our handshake back
+            if info.pendingMsgIds.count > 0 {
+                ui.systemLog("  Pending messages for us: \(info.pendingMsgIds.count)")
+            }
+
+            ui.statusBar("Drop — connected to \(peerDeviceId.hex.prefix(12))…")
+
             if asCentral {
                 let ourHandshake = try core.buildHandshake(peerDeviceId: peerDeviceId)
                 central.write(ourHandshake, to: BleConstants.handshakeUUID)
-
-                // Now send any pending messages for this peer
                 sendPendingMessages(to: peerDeviceId)
             }
         } catch {
-            print("[Drop] Handshake parse error: \(error)")
+            ui.error("Handshake parse error: \(error)")
         }
     }
 
@@ -213,7 +258,7 @@ final class DropManager: @unchecked Sendable {
             request.value = hs
             peripheral.manager.respond(to: request, withResult: .success)
         } catch {
-            print("[Drop] Failed to build handshake response: \(error)")
+            ui.error("Failed to build handshake response: \(error)")
         }
     }
 
@@ -221,10 +266,10 @@ final class DropManager: @unchecked Sendable {
         do {
             let pending = try core.getPendingForPeer(deviceId: peerDeviceId)
             guard !pending.isEmpty else {
-                print("[Drop] No pending messages for this peer")
+                ui.systemLog("No pending messages for this peer")
                 return
             }
-            print("[Drop] Sending \(pending.count) message(s)...")
+            ui.systemLog("Sending \(pending.count) message(s)…")
 
             for msg in pending {
                 let chunks = core.splitIntoChunks(
@@ -235,26 +280,28 @@ final class DropManager: @unchecked Sendable {
                     central.write(chunkBytes, to: BleConstants.inboxWriteUUID, type: .withResponse)
                 }
                 try core.markDelivered(msgId: msg.msgId)
-                print("[Drop] ✅ Sent message \(msg.msgId) (\(chunks.count) chunk(s))")
+                ui.success("✅ Sent message \(msg.msgId) (\(chunks.count) chunk(s))")
+                exchangedPeers.insert(peerDeviceId.hex)
             }
             refreshBloomFilter()
         } catch {
-            print("[Drop] Error sending messages: \(error)")
+            ui.error("Error sending messages: \(error)")
         }
     }
 
     private func handleIncomingChunk(_ data: Data) {
         do {
             let result = try core.processChunk(chunkBytes: data)
-            print("[Drop] Chunk \(result.chunkIndex + 1)/\(result.totalChunks) for msg \(result.msgId)")
+            ui.systemLog("Chunk \(result.chunkIndex + 1)/\(result.totalChunks) for msg \(result.msgId)")
 
             if result.isComplete, let assembled = result.assembledMessage {
                 let decrypted = try core.receiveMessage(wireBytes: assembled)
-                print("[Drop] 💬 Message from \(decrypted.senderId.hex):")
-                print("[Drop]    \(decrypted.body)")
+                ui.chatMessage(from: decrypted.senderId.hex.prefix(12).description,
+                               text: decrypted.body, incoming: true)
+                exchangedPeers.insert(decrypted.senderId.hex)
             }
         } catch {
-            print("[Drop] Chunk processing error: \(error)")
+            ui.error("Chunk processing error: \(error)")
         }
     }
 }

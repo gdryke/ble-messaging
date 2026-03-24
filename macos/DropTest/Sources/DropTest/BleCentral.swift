@@ -7,11 +7,16 @@ final class BleCentral: NSObject, @unchecked Sendable {
     private var connectedPeripheral: CBPeripheral?
     private var discoveredChars: [CBUUID: CBCharacteristic] = [:]
 
+    var ui: TerminalUI?
+
     var onBloomFilterDiscovered: ((CBPeripheral, Data?) -> Void)?
     var onConnected: ((CBPeripheral) -> Void)?
     var onCharacteristicDiscovered: ((CBPeripheral, CBCharacteristic) -> Void)?
     var onDataReceived: ((CBCharacteristic, Data) -> Void)?
     var onDisconnected: ((CBPeripheral) -> Void)?
+
+    /// Whether currently scanning
+    private(set) var isScanning: Bool = false
 
     override init() {
         super.init()
@@ -20,7 +25,8 @@ final class BleCentral: NSObject, @unchecked Sendable {
 
     func startScanning() {
         guard centralManager.state == .poweredOn else { return }
-        print("[Central] Scanning for Drop service...")
+        isScanning = true
+        ui?.systemLog("Scanning for Drop peers…")
         centralManager.scanForPeripherals(
             withServices: [BleConstants.serviceUUID],
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
@@ -29,10 +35,11 @@ final class BleCentral: NSObject, @unchecked Sendable {
 
     func stopScanning() {
         centralManager.stopScan()
+        isScanning = false
     }
 
     func connect(to peripheral: CBPeripheral) {
-        print("[Central] Connecting to \(peripheral.name ?? peripheral.identifier.uuidString)...")
+        ui?.systemLog("Connecting to \(peripheral.name ?? peripheral.identifier.uuidString)…")
         connectedPeripheral = peripheral
         peripheral.delegate = self
         centralManager.connect(peripheral, options: nil)
@@ -48,7 +55,7 @@ final class BleCentral: NSObject, @unchecked Sendable {
     func write(_ data: Data, to charUUID: CBUUID, type: CBCharacteristicWriteType = .withResponse) {
         guard let peripheral = connectedPeripheral,
               let char = discoveredChars[charUUID] else {
-            print("[Central] Cannot write — no connection or characteristic not found")
+            ui?.error("Cannot write — no connection or characteristic not found")
             return
         }
         peripheral.writeValue(data, for: char, type: type)
@@ -72,18 +79,15 @@ final class BleCentral: NSObject, @unchecked Sendable {
 extension BleCentral: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         if central.state == .poweredOn {
-            print("[Central] Bluetooth ON — ready to scan")
+            ui?.systemLog("Bluetooth ON — ready to scan")
             startScanning()
         } else {
-            print("[Central] Bluetooth state: \(central.state.rawValue)")
+            ui?.systemLog("Bluetooth state: \(central.state.rawValue)")
         }
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
                         advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        let name = peripheral.name ?? "unknown"
-        print("[Central] Discovered: \(name) (RSSI: \(RSSI))")
-
         // Extract service data (bloom filter)
         let serviceData = advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data]
         let bloomData = serviceData?[BleConstants.serviceUUID]
@@ -92,17 +96,15 @@ extension BleCentral: CBCentralManagerDelegate {
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("[Central] ✅ Connected to \(peripheral.name ?? "device")")
-        // Request max MTU
+        ui?.systemLog("Connected to \(peripheral.name ?? "device")")
         let mtu = peripheral.maximumWriteValueLength(for: .withResponse)
-        print("[Central] MTU: \(mtu + 3) bytes")
-        // Discover services
+        ui?.systemLog("MTU: \(mtu + 3) bytes")
         peripheral.discoverServices([BleConstants.serviceUUID])
         onConnected?(peripheral)
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        print("[Central] Disconnected from \(peripheral.name ?? "device")")
+        ui?.systemLog("Disconnected from \(peripheral.name ?? "device")")
         discoveredChars.removeAll()
         connectedPeripheral = nil
         onDisconnected?(peripheral)
@@ -121,7 +123,7 @@ extension BleCentral: CBPeripheralDelegate {
         guard let chars = service.characteristics else { return }
         for char in chars {
             discoveredChars[char.uuid] = char
-            print("[Central] Found characteristic: \(char.uuid)")
+            ui?.systemLog("Found characteristic: \(char.uuid)")
             onCharacteristicDiscovered?(peripheral, char)
         }
     }
@@ -133,7 +135,7 @@ extension BleCentral: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error {
-            print("[Central] Write error: \(error)")
+            ui?.error("Write error: \(error)")
         }
     }
 }

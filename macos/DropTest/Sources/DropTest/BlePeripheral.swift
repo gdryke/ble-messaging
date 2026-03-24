@@ -10,10 +10,15 @@ final class BlePeripheral: NSObject, @unchecked Sendable {
     private var handshakeChar: CBMutableCharacteristic?
     private var ackChar: CBMutableCharacteristic?
 
+    var ui: TerminalUI?
+
     var bloomFilterData: Data = Data(count: 8)
     var onWriteReceived: ((CBATTRequest) -> Void)?
     var onReadReceived: ((CBATTRequest) -> Void)?
     var onSubscribed: ((CBCentral, CBCharacteristic) -> Void)?
+
+    /// Whether currently advertising
+    private(set) var isAdvertising: Bool = false
 
     override init() {
         super.init()
@@ -86,27 +91,28 @@ final class BlePeripheral: NSObject, @unchecked Sendable {
 extension BlePeripheral: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         if peripheral.state == .poweredOn {
-            print("[Peripheral] Bluetooth ON — setting up GATT service")
+            ui?.systemLog("Peripheral: Bluetooth ON — setting up GATT")
             startAdvertising()
         } else {
-            print("[Peripheral] Bluetooth state: \(peripheral.state.rawValue)")
+            ui?.systemLog("Peripheral: Bluetooth state \(peripheral.state.rawValue)")
         }
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         if let error {
-            print("[Peripheral] Failed to add service: \(error)")
+            ui?.error("Peripheral: failed to add service: \(error)")
             return
         }
-        print("[Peripheral] Service added — starting advertising")
+        ui?.systemLog("Peripheral: service added — advertising")
         doAdvertise()
     }
 
     func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
         if let error {
-            print("[Peripheral] Advertising failed: \(error)")
+            ui?.error("Peripheral: advertising failed: \(error)")
         } else {
-            print("[Peripheral] ✅ Advertising with service UUID")
+            isAdvertising = true
+            ui?.systemLog("Peripheral: advertising ✓")
         }
     }
 
@@ -122,7 +128,7 @@ extension BlePeripheral: CBPeripheralManagerDelegate {
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
-        print("[Peripheral] Central subscribed to \(characteristic.uuid)")
+        ui?.systemLog("Peripheral: central subscribed to \(characteristic.uuid)")
         onSubscribed?(central, characteristic)
     }
 }
