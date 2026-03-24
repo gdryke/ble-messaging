@@ -1,0 +1,338 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.DropTest-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/sources",
+      "importPath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleCentral.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleConstants.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BlePeripheral.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/DropManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/drop_ffi.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/main.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "DropTest",
+      "moduleOutputPath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/Modules/DropTest.swiftmodule",
+      "objects" : [
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral.swift.o",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants.swift.o",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral.swift.o",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager.swift.o",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi.swift.o",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-Xcc",
+        "-fmodule-map-file=/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropFFI/module.modulemap",
+        "-module-cache-path",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "DropTest_main",
+        "-swift-version",
+        "5",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "droptest"
+      ],
+      "outputFileMapPath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/Modules/DropTest.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleCentral.swift",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleConstants.swift",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BlePeripheral.swift",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/DropManager.swift",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/drop_ffi.swift",
+        "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/main.swift"
+      ],
+      "tempsPath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "DropTest" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "DropTest",
+      "-package-name",
+      "droptest",
+      "-c",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleCentral.swift",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleConstants.swift",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BlePeripheral.swift",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/DropManager.swift",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/drop_ffi.swift",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/main.swift",
+      "-I",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-Xcc",
+      "-fmodule-map-file=/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropFFI/module.modulemap",
+      "-module-cache-path",
+      "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "DropTest_main",
+      "-swift-version",
+      "5",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "droptest",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "DropTest" : [
+      "drop_ffiFFI"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest-entitlement.plist"
+    },
+    "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleCentral.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleConstants.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BlePeripheral.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/DropManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/drop_ffi.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/main.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/sources"
+    },
+    "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.product/Objects.LinkFileList"
+    },
+    "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

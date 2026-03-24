@@ -1,0 +1,47 @@
+{
+  "": {
+    "swift-dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/master.swiftdeps"
+  },
+  "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleCentral.swift": {
+    "dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral.d",
+    "object": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral.swift.o",
+    "swiftmodule": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral~partial.swiftmodule",
+    "swift-dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral.swiftdeps",
+    "diagnostics": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleCentral.dia"
+  },
+  "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BleConstants.swift": {
+    "dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants.d",
+    "object": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants.swift.o",
+    "swiftmodule": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants~partial.swiftmodule",
+    "swift-dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants.swiftdeps",
+    "diagnostics": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BleConstants.dia"
+  },
+  "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/BlePeripheral.swift": {
+    "dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral.d",
+    "object": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral.swift.o",
+    "swiftmodule": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral~partial.swiftmodule",
+    "swift-dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral.swiftdeps",
+    "diagnostics": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/BlePeripheral.dia"
+  },
+  "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/DropManager.swift": {
+    "dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager.d",
+    "object": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager.swift.o",
+    "swiftmodule": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager.swiftdeps",
+    "diagnostics": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/DropManager.dia"
+  },
+  "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/drop_ffi.swift": {
+    "dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi.d",
+    "object": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi.swift.o",
+    "swiftmodule": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi~partial.swiftmodule",
+    "swift-dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi.swiftdeps",
+    "diagnostics": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/drop_ffi.dia"
+  },
+  "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/Sources/DropTest/main.swift": {
+    "dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main.d",
+    "object": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main.swift.o",
+    "swiftmodule": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main.swiftdeps",
+    "diagnostics": "/Users/greg/personal/code/low-energy-bt-messaging/macos/DropTest/.build/arm64-apple-macosx/debug/DropTest.build/main.dia"
+  }
+}

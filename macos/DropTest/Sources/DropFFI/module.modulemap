@@ -1,0 +1,4 @@
+module drop_ffiFFI {
+    header "drop_ffiFFI.h"
+    export *
+}
