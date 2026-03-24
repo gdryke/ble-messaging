@@ -58,11 +58,6 @@ final class BlePeripheral: NSObject, @unchecked Sendable {
 
     func updateBloomFilter(_ data: Data) {
         self.bloomFilterData = data
-        // Re-advertise with new service data
-        if manager.isAdvertising {
-            manager.stopAdvertising()
-            doAdvertise()
-        }
     }
 
     /// Send data to a subscribed central via the outbox notify characteristic.
@@ -78,15 +73,12 @@ final class BlePeripheral: NSObject, @unchecked Sendable {
     }
 
     private func doAdvertise() {
-        // Build service data: 8-byte bloom + 1-byte version + 1-byte flags
-        var serviceData = bloomFilterData
-        serviceData.append(0x01) // protocol version
-        serviceData.append(0x00) // flags
-
+        // Note: CBAdvertisementDataServiceDataKey is not supported for peripheral
+        // advertising on macOS. The Bloom filter is instead served via the
+        // handshake characteristic. Only advertise service UUID and local name.
         manager.startAdvertising([
             CBAdvertisementDataServiceUUIDsKey: [BleConstants.serviceUUID],
             CBAdvertisementDataLocalNameKey: "Drop",
-            CBAdvertisementDataServiceDataKey: [BleConstants.serviceUUID: serviceData],
         ])
     }
 }
