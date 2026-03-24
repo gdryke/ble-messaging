@@ -61,6 +61,8 @@ class BleManager(
 
     private var gattServer: BluetoothGattServer? = null
     private val activeConnections = mutableMapOf<String, BluetoothGatt>()
+    private val writeQueue = java.util.concurrent.ConcurrentLinkedQueue<Pair<BluetoothGatt, ByteArray>>()
+    @Volatile private var writeInFlight = false
 
     private val _connectedPeers = MutableStateFlow<Set<String>>(emptySet())
     val connectedPeers: StateFlow<Set<String>> = _connectedPeers.asStateFlow()
@@ -322,6 +324,22 @@ class BleManager(
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "Write to ${characteristic.uuid} succeeded on ${gatt.device.address}")
+                when (characteristic.uuid) {
+                    HANDSHAKE_UUID -> {
+                        // After writing our handshake, read the peer's handshake back
+                        val service = gatt.getService(SERVICE_UUID)
+                        val handshakeChar = service?.getCharacteristic(HANDSHAKE_UUID)
+                        if (handshakeChar != null) {
+                            Log.d(TAG, "Reading peer handshake from ${gatt.device.address}")
+                            gatt.readCharacteristic(handshakeChar)
+                        }
+                    }
+                    INBOX_WRITE_UUID -> {
+                        // Send next queued chunk
+                        writeInFlight = false
+                        drainWriteQueue(gatt)
+                    }
+                }
             } else {
                 Log.w(TAG, "Write to ${characteristic.uuid} failed on ${gatt.device.address}: $status")
             }
@@ -345,6 +363,27 @@ class BleManager(
                 }
             }
         }
+
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
+        ) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                Log.w(TAG, "Descriptor write failed for ${descriptor.characteristic.uuid}: $status")
+                return
+            }
+            when (descriptor.characteristic.uuid) {
+                OUTBOX_NOTIFY_UUID -> {
+                    // Outbox subscription done → now subscribe to ACK
+                    subscribeToAckAndSend(gatt)
+                }
+                ACK_UUID -> {
+                    // All subscriptions done → send pending messages
+                    scope.launch { sendPendingMessages(gatt) }
+                }
+            }
+        }
     }
 
     private fun initiateHandshake(gatt: BluetoothGatt, service: BluetoothGattService) {
@@ -360,7 +399,9 @@ class BleManager(
     private fun beginMessageExchange(gatt: BluetoothGatt) {
         val service = gatt.getService(SERVICE_UUID) ?: return
 
-        // Subscribe to outbox notifications from peer
+        // Subscribe to outbox notifications from peer.
+        // Note: descriptor writes must be serialized. We subscribe to outbox first,
+        // then use the onDescriptorWrite callback to subscribe to ACK next.
         val outboxChar = service.getCharacteristic(OUTBOX_NOTIFY_UUID)
         if (outboxChar != null) {
             gatt.setCharacteristicNotification(outboxChar, true)
@@ -370,6 +411,10 @@ class BleManager(
                 gatt.writeDescriptor(it)
             }
         }
+    }
+
+    private fun subscribeToAckAndSend(gatt: BluetoothGatt) {
+        val service = gatt.getService(SERVICE_UUID) ?: return
 
         // Subscribe to ACK notifications
         val ackChar = service.getCharacteristic(ACK_UUID)
@@ -380,26 +425,44 @@ class BleManager(
                 it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                 gatt.writeDescriptor(it)
             }
-        }
-
-        // Send pending messages
-        scope.launch {
-            sendPendingMessages(gatt)
+        } else {
+            // No ACK char — go straight to sending
+            scope.launch { sendPendingMessages(gatt) }
         }
     }
 
     private suspend fun sendPendingMessages(gatt: BluetoothGatt) {
-        val service = gatt.getService(SERVICE_UUID) ?: return
-        val inboxChar = service.getCharacteristic(INBOX_WRITE_UUID) ?: return
         val peerId = gatt.device.address
 
-        // TODO: Wire UniFFI bindings — get pending messages from Rust core
         val messages = repository.getPendingMessages(peerId)
-        for (message in messages) {
-            inboxChar.value = message
-            gatt.writeCharacteristic(inboxChar)
-            // Note: In production, wait for onCharacteristicWrite callback before sending next
+        if (messages.isEmpty()) {
+            Log.d(TAG, "No pending messages for $peerId")
+            return
         }
+
+        Log.i(TAG, "Queueing ${messages.size} chunk(s) for $peerId")
+        for (chunk in messages) {
+            writeQueue.add(Pair(gatt, chunk))
+        }
+        drainWriteQueue(gatt)
+    }
+
+    private fun drainWriteQueue(gatt: BluetoothGatt) {
+        if (writeInFlight) return
+
+        val next = writeQueue.poll() ?: run {
+            Log.d(TAG, "Write queue drained for ${gatt.device.address}")
+            return
+        }
+
+        val (targetGatt, data) = next
+        val service = targetGatt.getService(SERVICE_UUID) ?: return
+        val inboxChar = service.getCharacteristic(INBOX_WRITE_UUID) ?: return
+
+        writeInFlight = true
+        inboxChar.value = data
+        inboxChar.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        targetGatt.writeCharacteristic(inboxChar)
     }
 
     // endregion

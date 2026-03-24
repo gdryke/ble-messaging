@@ -119,7 +119,6 @@ final class TerminalUI: @unchecked Sendable {
     /// Log a BLE / system event in the left column (dim cyan).
     func systemLog(_ message: String) {
         guard verboseLogging else { return }
-        let line = "\(dim)\(cyan)\(message)\(reset)"
         lock.lock(); defer { lock.unlock() }
         systemLines.append(message)
         if systemLines.count > maxBuffer { systemLines.removeFirst() }
@@ -181,6 +180,16 @@ final class TerminalUI: @unchecked Sendable {
         fflush(stdout)
     }
 
+    /// Redraw prompt with current input text and position cursor.
+    func drawPromptWithText(_ text: String, cursorOffset: Int) {
+        let truncated = String(text.prefix(cols - 3))
+        rawWrite("\(esc)\(promptRow);1H\(esc)2K\(bold)\(white)> \(reset)\(truncated)")
+        // Position cursor at the right spot (col 3 = after "> ")
+        let cursorCol = min(cursorOffset, truncated.count) + 3
+        rawWrite("\(esc)\(promptRow);\(cursorCol)H")
+        fflush(stdout)
+    }
+
     /// Clear just the prompt text (for Ctrl+C).
     func clearPrompt() {
         rawWrite("\(esc)\(promptRow);1H\(esc)2K\(bold)\(white)> \(reset)")
@@ -193,7 +202,6 @@ final class TerminalUI: @unchecked Sendable {
         rawWrite("\(esc)s")  // save cursor
         let visibleRows = contentBottom - contentTop  // reserve row 1 for header
         let startRow = contentTop + 1  // skip header row
-        let startIdx = max(0, systemLines.count - visibleRows)
         let visible = Array(systemLines.suffix(visibleRows))
 
         for i in 0..<visibleRows {

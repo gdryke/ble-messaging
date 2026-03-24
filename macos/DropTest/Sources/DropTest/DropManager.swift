@@ -12,6 +12,8 @@ final class DropManager: @unchecked Sendable {
     private var peerMap: [UUID: Data] = [:]
     /// Tracks whether we've initiated a handshake with a connected peer
     private var handshakeComplete: [UUID: Bool] = [:]
+    /// Device ID of the currently connected peer (as central), used for immediate sending
+    private var connectedPeerDeviceId: Data?
 
     // -- Deduplication state --
     /// Peripheral UUIDs we've already discovered (avoid repeat "Discovered" logs)
@@ -120,6 +122,13 @@ final class DropManager: @unchecked Sendable {
             refreshBloomFilter()
             ui.chatMessage(from: "you", text: text, incoming: false)
             ui.systemLog("Message queued: \(msg.msgId) (\(msg.wireBytes.count) bytes)")
+
+            // Send immediately if we're connected to this peer as central
+            if let connectedId = connectedPeerDeviceId, connectedId == peerDeviceId {
+                DispatchQueue.main.async { [weak self] in
+                    self?.sendPendingMessages(to: peerDeviceId)
+                }
+            }
         } catch {
             ui.error("Send failed: \(error)")
         }
@@ -185,6 +194,7 @@ final class DropManager: @unchecked Sendable {
             guard let self else { return }
             self.peerMap.removeAll()
             self.handshakeComplete.removeAll()
+            self.connectedPeerDeviceId = nil
 
             let name = peripheral.name ?? peripheral.identifier.uuidString.prefix(8).description
             self.ui.systemLog("Lost connection to \(name)")
@@ -208,7 +218,8 @@ final class DropManager: @unchecked Sendable {
             switch request.characteristic.uuid {
             case BleConstants.handshakeUUID:
                 self.handleIncomingHandshake(data, asCentral: false)
-                self.respondWithHandshake(to: request)
+                // Note: BlePeripheral.didReceiveWrite already sends the GATT response.
+                // The peer reads our handshake via the read handler, not the write response.
 
             case BleConstants.inboxWriteUUID:
                 self.handleIncomingChunk(data)
@@ -246,6 +257,7 @@ final class DropManager: @unchecked Sendable {
             ui.statusBar("Drop — connected to \(peer.displayName)")
 
             if asCentral {
+                connectedPeerDeviceId = peerDeviceId
                 let ourHandshake = try core.buildHandshake(peerDeviceId: peerDeviceId)
                 central.write(ourHandshake, to: BleConstants.handshakeUUID)
                 sendPendingMessages(to: peerDeviceId)

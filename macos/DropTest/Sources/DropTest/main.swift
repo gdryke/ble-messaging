@@ -5,23 +5,127 @@ import Foundation
 
 let ui = TerminalUI()
 
-// -- Ctrl+C handling: first press clears prompt, second exits --
-var ctrlCPending = false
-signal(SIGINT) { _ in
-    if ctrlCPending {
-        // Second Ctrl+C — clean exit
-        ui.cleanup()
-        print("Bye!")
-        exit(0)
+// MARK: - Raw terminal input with history
+
+/// Manages raw terminal input for the command prompt.
+final class RawInput: @unchecked Sendable {
+    private var history: [String] = []
+    private var historyIndex: Int = 0
+    private var currentLine: String = ""
+    private var cursorPos: Int = 0
+    private var originalTermios = termios()
+
+    init() {
+        enableRawMode()
     }
-    ctrlCPending = true
-    ui.clearPrompt()
-    ui.systemLog("Press Ctrl+C again to exit")
-    // Reset after 2 seconds
-    DispatchQueue.global().asyncAfter(deadline: .now() + 2.0) {
-        ctrlCPending = false
+
+    private func enableRawMode() {
+        tcgetattr(STDIN_FILENO, &originalTermios)
+        var raw = originalTermios
+        // Disable canonical mode (line buffering) and echo
+        raw.c_lflag &= ~UInt(ICANON | ECHO | ISIG)
+        // Read 1 byte at a time, no timeout
+        raw.c_cc.16 = 1  // VMIN
+        raw.c_cc.17 = 0  // VTIME
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)
+    }
+
+    func restoreTerminal() {
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &originalTermios)
+    }
+
+    /// Read a line of input with arrow key history support.
+    /// Returns nil on EOF.
+    func readLine() -> String? {
+        currentLine = ""
+        cursorPos = 0
+        historyIndex = history.count
+
+        while true {
+            var c: UInt8 = 0
+            let n = read(STDIN_FILENO, &c, 1)
+            if n <= 0 { return nil }
+
+            switch c {
+            case 3:  // Ctrl+C
+                return "\u{03}"  // signal to caller
+            case 4:  // Ctrl+D (EOF)
+                if currentLine.isEmpty { return nil }
+            case 10, 13:  // Enter
+                if !currentLine.isEmpty {
+                    history.append(currentLine)
+                    if history.count > 200 { history.removeFirst() }
+                }
+                return currentLine
+            case 127, 8:  // Backspace / Delete
+                if cursorPos > 0 {
+                    let idx = currentLine.index(currentLine.startIndex, offsetBy: cursorPos - 1)
+                    currentLine.remove(at: idx)
+                    cursorPos -= 1
+                    refreshLine()
+                }
+            case 27:  // Escape sequence (arrow keys)
+                var seq1: UInt8 = 0, seq2: UInt8 = 0
+                guard read(STDIN_FILENO, &seq1, 1) == 1 else { continue }
+                guard read(STDIN_FILENO, &seq2, 1) == 1 else { continue }
+                if seq1 == 91 {  // [
+                    switch seq2 {
+                    case 65:  // Up arrow
+                        if historyIndex > 0 {
+                            historyIndex -= 1
+                            currentLine = history[historyIndex]
+                            cursorPos = currentLine.count
+                            refreshLine()
+                        }
+                    case 66:  // Down arrow
+                        if historyIndex < history.count - 1 {
+                            historyIndex += 1
+                            currentLine = history[historyIndex]
+                            cursorPos = currentLine.count
+                            refreshLine()
+                        } else if historyIndex == history.count - 1 {
+                            historyIndex = history.count
+                            currentLine = ""
+                            cursorPos = 0
+                            refreshLine()
+                        }
+                    case 67:  // Right arrow
+                        if cursorPos < currentLine.count {
+                            cursorPos += 1
+                            refreshLine()
+                        }
+                    case 68:  // Left arrow
+                        if cursorPos > 0 {
+                            cursorPos -= 1
+                            refreshLine()
+                        }
+                    default:
+                        break
+                    }
+                }
+            case 21:  // Ctrl+U — clear line
+                currentLine = ""
+                cursorPos = 0
+                refreshLine()
+            default:
+                if c >= 32 && c < 127 {  // printable ASCII
+                    let idx = currentLine.index(currentLine.startIndex, offsetBy: cursorPos)
+                    currentLine.insert(Character(UnicodeScalar(c)), at: idx)
+                    cursorPos += 1
+                    refreshLine()
+                }
+            }
+        }
+    }
+
+    private func refreshLine() {
+        // Redraw the prompt line with current input
+        ui.drawPromptWithText(currentLine, cursorOffset: cursorPos)
     }
 }
+
+// -- Ctrl+C state --
+var ctrlCPending = false
 
 let dbDir = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent(".drop")
@@ -39,17 +143,43 @@ do {
 ui.info("Commands: peers, add, send, identity, bloom, status, log, quit")
 ui.redrawPrompt()
 
+let input = RawInput()
+
 // Run the command loop on a background thread so RunLoop stays alive for BLE
 DispatchQueue.global().async {
     while true {
-        guard let line = readLine()?.trimmingCharacters(in: .whitespaces),
-              !line.isEmpty else {
+        guard let line = input.readLine() else {
+            // EOF
+            ui.cleanup()
+            input.restoreTerminal()
+            exit(0)
+        }
+
+        // Handle Ctrl+C
+        if line == "\u{03}" {
+            if ctrlCPending {
+                ui.cleanup()
+                input.restoreTerminal()
+                Foundation.write(STDOUT_FILENO, "Bye!\n", 5)
+                exit(0)
+            }
+            ctrlCPending = true
+            ui.systemLog("Press Ctrl+C again to exit")
+            ui.redrawPrompt()
+            DispatchQueue.global().asyncAfter(deadline: .now() + 2.0) {
+                ctrlCPending = false
+            }
+            continue
+        }
+
+        ctrlCPending = false
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else {
             ui.redrawPrompt()
             continue
         }
-        ctrlCPending = false  // reset on any input
 
-        let parts = line.split(separator: " ", maxSplits: 2).map(String.init)
+        let parts = trimmed.split(separator: " ", maxSplits: 2).map(String.init)
         let command = parts[0].lowercased()
 
         switch command {
@@ -103,7 +233,8 @@ DispatchQueue.global().async {
 
         case "quit", "exit", "q":
             ui.cleanup()
-            print("Bye!")
+            input.restoreTerminal()
+            Foundation.write(STDOUT_FILENO, "Bye!\n", 5)
             exit(0)
 
         default:
